@@ -13,11 +13,12 @@ process ImmuneBuilder {
   output:
   path "*.pdb"
   path "*.npy", optional: true
-  
+
   script:
   """
   #!/usr/bin/env python3
 
+  import time
   import sys
   from ImmuneBuilder import NanoBodyBuilder2
   from ImmuneBuilder import ABodyBuilder2
@@ -49,7 +50,17 @@ process ImmuneBuilder {
   res = predictor.predict(seqs)
 
   print("Starting refinement...")
-  res.save(id + ".pdb", n_threads=n_threads)
+  max_retries = ${params.max_retries}
+  for attempt in range(1, max_retries + 1):
+    try:
+        res.save(id + ".pdb", n_threads=n_threads)
+        break
+    except Exception as e:
+        print(f"Attempt {attempt} failed: {e}")
+        if attempt == max_retries:
+            print("All attempts failed. Exiting...")
+            raise
+        time.sleep(1)
   print("Refinement finished. Final structure saved as pdb...")
 
   if "${params.save_embedding}" == "true":
