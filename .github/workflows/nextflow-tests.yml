@@ -1,0 +1,45 @@
+name: Nextflow Tests
+on: push
+jobs:
+  nextflow-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: nf-core/setup-nextflow@v1
+      -
+        name: Free up space
+        run: |
+          which nextflow
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/.ghcup
+          sudo rm -rf /usr/local/julia*
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /opt/microsoft /opt/google
+          sudo rm -rf /opt/az
+          sudo rm -rf /usr/local/share/powershell
+          docker system prune -af || true
+          docker builder prune -af || true
+          docker image ls
+          df -h
+      -
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull images
+        run: |
+          docker pull -q ghcr.io/juyeongkim/immunebuilder:latest
+          docker image ls
+          df -h
+      - name: Run nf-immunebuilder
+        run: |
+          nextflow run main.nf -ansi-log false --input tests --output output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifact
+          path: output
