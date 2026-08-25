@@ -1,8 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-FASTA = Channel.fromPath("${params.input}/*.fasta").map {[it.baseName, it]}
-
 process ImmuneBuilder {
   tag "${sample_id}"
   publishDir "${params.output}", mode: 'copy'
@@ -71,5 +69,6 @@ process ImmuneBuilder {
 }
 
 workflow {
+  FASTA = Channel.fromPath("${params.input}/*.fasta").map {[it.baseName, it]}
   ImmuneBuilder(FASTA)
 }
